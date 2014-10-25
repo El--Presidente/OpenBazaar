@@ -14,7 +14,7 @@ import constants
 from crypto_util import Cryptor
 from guid import GUIDMixin
 import network_util
-from tor_util import *
+from tor_util import TorRedirector
 
 class PeerConnection(object):
     def __init__(self, transport, address, nickname=""):
@@ -48,8 +48,7 @@ class PeerConnection(object):
             # Currently only '.onion' hosts are routed through Tor.
             # TBC : If --Tor-mode flag is set then route all outbound connections through Tor
             if str(ip).endswith('.onion'):
-                print ip+':'+str(port)
-                self.torsock = TorRedirector(ip,port)
+                self.torsock = TorRedirector(ip, port)
                 self.torsock.start()
                 self.socket.connect('tcp://127.0.0.1:%s' % self.torsock.localport)
             else:
