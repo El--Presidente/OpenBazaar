@@ -14,7 +14,7 @@ import constants
 from crypto_util import Cryptor
 from guid import GUIDMixin
 import network_util
-
+from tor_util import *
 
 class PeerConnection(object):
     def __init__(self, transport, address, nickname=""):
@@ -40,8 +40,20 @@ class PeerConnection(object):
         self._initiate_connection()
 
     def _initiate_connection(self):
+        # Convert URI over
+        url = urlparse(self.address)
+        ip = url.hostname
+        port = url.port
         try:
-            self.socket.connect(self.address)
+            # Currently only '.onion' hosts are routed through Tor.
+            # TBC : If --Tor-mode flag is set then route all outbound connections through Tor
+            if str(ip).endswith('.onion'):
+                print ip+':'+str(port)
+                self.torsock = TorRedirector(ip,port)
+                self.torsock.start()
+                self.socket.connect('tcp://127.0.0.1:%s' % self.torsock.localport)
+            else:
+                self.socket.connect(self.address)
         except zmq.ZMQError as e:
             if e.errno != errno.EINVAL:
                 raise
