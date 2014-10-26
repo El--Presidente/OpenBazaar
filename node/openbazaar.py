@@ -69,6 +69,7 @@ def create_argument_parser():
         ('--disable-stun-check',),
         ('--disable-upnp', '-j'),
         ('--enable-ip-checker',),
+        ('--tor-mode',),
         ('--seed-mode', '-S')
     )
     for switches in flags:
@@ -187,6 +188,9 @@ openbazaar [options] <command>
     --enable-ip-checker
         Enable periodic IP address checking.
         Useful in case you expect your IP to change rapidly.
+
+    --tor-mode
+        Force OpenBazaar to use Tor
 """
 
 
@@ -271,7 +275,8 @@ def create_openbazaar_contexts(arguments, nat_status):
                                          arguments.disable_stun_check,
                                          arguments.disable_open_browser,
                                          arguments.disable_sqlite_crypt,
-                                         arguments.enable_ip_checker))
+                                         arguments.enable_ip_checker,
+                                         arguments.tor_mode))
     else:
         # Create an OpenBazaarContext object for each development node.
         db_path = os.path.join(defaults['db_dir'], 'this_will_be_ignored')
@@ -312,7 +317,8 @@ def create_openbazaar_contexts(arguments, nat_status):
                                              arguments.disable_stun_check,
                                              arguments.disable_open_browser,
                                              arguments.disable_sqlite_crypt,
-                                             arguments.enable_ip_checker))
+                                             arguments.enable_ip_checker,
+                                             arguments.tor_mode))
     return ob_ctxs
 
 
@@ -348,12 +354,24 @@ def start(arguments):
         arguments.disable_stun_check = True
         arguments.disable_upnp = True
 
+    # If Tor-mode is enabled make sure we override relevant settings
+    if arguments.tor_mode:
+        print "Tor Mode Enabled (Using 127.0.0.1:9050 as Tor proxy)"
+        arguments.disable_stun_check = True
+        arguments.disable_upnp = True
+        arguments.enable_ip_checker = False
+        # For now we will take the users hidden service from the -i (IP) parameter
+        # TBC: Attempt to automatically configure users hidden service using stem
+        if not str(arguments.server_ip).endswith('.onion'):
+            print "No Hidden Service hostname provided using '-i', please set one"
+            arguments.server_ip = "myhiddenservice.onion"
+
     # Try to get NAT escape UDP port
     nat_status = None
     if not arguments.disable_stun_check:
         print "Checking NAT Status..."
         nat_status = network_util.get_NAT_status()
-    elif not arguments.dev_mode and network_util.is_private_ip_address(arguments.server_ip):
+    elif not (arguments.dev_mode or arguments.tor_mode) and network_util.is_private_ip_address(arguments.server_ip):
         print "openbazaar: Could not start. The given/default server IP address",
         print arguments.server_ip, "is not a public ip address."
         print "(Try './openbazaar help' and read about the '--server-ip', '-i' options)"

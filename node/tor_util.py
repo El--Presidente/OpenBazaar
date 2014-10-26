@@ -13,6 +13,8 @@ def log(s):
         print '%s: Tor Redirector: %s' % (time.ctime(), s)
         sys.stdout.flush()
 
+def is_onion_addr(addr):
+    return addr.endswith(".onion")
 
 class TorRedirector(Thread):
     def __init__(self, targethost, targetport):
@@ -28,7 +30,7 @@ class TorRedirector(Thread):
 
     def run(self):
         ClientSock, address = self.sock.accept()
-        log('Tor Redirector: Client connected from %s, connecting to %s:%s' % (
+        log('Client connected from %s, connecting to %s:%s' % (
             address, self.targethost, self.targetport))
         RemoteSock = socks.socksocket(AF_INET, SOCK_STREAM)
         RemoteSock.setproxy(socks.PROXY_TYPE_SOCKS5, "127.0.0.1", 9050, True)

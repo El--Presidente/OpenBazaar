@@ -17,13 +17,13 @@ import network_util
 from tor_util import TorRedirector
 
 class PeerConnection(object):
-    def __init__(self, transport, address, nickname=""):
+    def __init__(self, transport, address, tor_mode, nickname=""):
 
         self.timeout = 10  # [seconds]
         self.transport = transport
         self.address = address
         self.nickname = nickname
-
+        self.tor_mode = tor_mode
         # Establishing a ZeroMQ stream object
         self.ctx = transport.ctx
         self.socket = self.ctx.socket(zmq.REQ)
@@ -45,9 +45,8 @@ class PeerConnection(object):
         ip = url.hostname
         port = url.port
         try:
-            # Currently only '.onion' hosts are routed through Tor.
-            # TBC : If --Tor-mode flag is set then route all outbound connections through Tor
-            if str(ip).endswith('.onion'):
+            #  If --Tor-mode flag is set then route all outbound connections through Tor
+            if self.tor_mode:
                 self.torsock = TorRedirector(ip, port)
                 self.torsock.start()
                 self.socket.connect('tcp://127.0.0.1:%s' % self.torsock.localport)
@@ -91,11 +90,11 @@ class PeerConnection(object):
 
 class CryptoPeerConnection(GUIDMixin, PeerConnection):
 
-    def __init__(self, transport, address, pub=None, guid=None, nickname="",
+    def __init__(self, transport, address, tor_mode, pub=None, guid=None, nickname="",
                  sin=None):
-
+        self.tor_mode = tor_mode
         GUIDMixin.__init__(self, guid)
-        PeerConnection.__init__(self, transport, address, nickname)
+        PeerConnection.__init__(self, transport, address, tor_mode, nickname)
 
         self.pub = pub
 
@@ -221,14 +220,12 @@ class CryptoPeerConnection(GUIDMixin, PeerConnection):
     def get_guid(self):
         return self.guid
 
-
 class PeerListener(GUIDMixin):
-    def __init__(self, ip, port, ctx, guid, data_cb):
-        super(PeerListener, self).__init__(guid)
-
+    def __init__(self, ip, port, ctx, guid, data_cb, tor_mode):
         self.ip = ip
         self.port = port
         self._data_cb = data_cb
+        self.tor_mode = tor_mode
         self.uri = network_util.get_peer_url(self.ip, self.port)
         self.is_listening = False
         self.ctx = ctx
@@ -257,12 +254,14 @@ class PeerListener(GUIDMixin):
         self.log.info("Listening at: %s:%s", self.ip, self.port)
         self.socket = self.ctx.socket(zmq.REP)
 
-        if network_util.is_loopback_addr(self.ip):
+        if network_util.is_loopback_addr(self.ip) or self.tor_mode:
             try:
-                # we are in local test mode so bind that socket on the
-                # specified IP
-                self.log.info("PeerListener.socket.bind('%s') LOOPBACK", self.uri)
-                self.socket.bind(self.uri)
+                # we are in local test mode or Tor mode so bind that socket on the
+                # local IP (or given URI in Dev mode)
+                if self.tor_mode:
+                    self.socket.bind('tcp://127.0.0.1:%s' % self.port)
+                else:
+                    self.socket.bind(self.uri)
             except ZMQError as e:
                 error_message = "".join([
                     "PeerListener.listen() error: ",
@@ -316,9 +315,8 @@ class PeerListener(GUIDMixin):
 
 class CryptoPeerListener(PeerListener):
 
-    def __init__(self, ip, port, pubkey, secret, ctx, guid, data_cb):
-
-        super(CryptoPeerListener, self).__init__(ip, port, ctx, guid, data_cb)
+    def __init__(self, ip, port, pubkey, secret, ctx, data_cb,tor_mode):
+        PeerListener.__init__(self, ip, port, ctx, data_cb,tor_mode)
 
         self.pubkey = pubkey
         self.secret = secret

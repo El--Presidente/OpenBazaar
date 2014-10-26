@@ -69,7 +69,8 @@ class OpenBazaarContext(object):
                  disable_stun_check,
                  disable_open_browser,
                  disable_sqlite_crypt,
-                 enable_ip_checker):
+                 enable_ip_checker,
+                 tor_mode):
         self.nat_status = nat_status
         self.server_ip = server_ip
         self.server_port = server_port
@@ -91,6 +92,7 @@ class OpenBazaarContext(object):
         self.disable_open_browser = disable_open_browser
         self.disable_sqlite_crypt = disable_sqlite_crypt
         self.enable_ip_checker = enable_ip_checker
+        self.tor_mode = tor_mode
 
         # to deduct up-time, and (TODO) average up-time
         # time stamp in (non-local) Coordinated Universal Time format.
@@ -116,6 +118,7 @@ class OpenBazaarContext(object):
              "disable_open_browser": self.disable_open_browser,
              "disable_sqlite_crypt": self.disable_sqlite_crypt,
              "enable_ip_checker": self.enable_ip_checker,
+             "tor_mode": self.tor_mode,
              "started_utc_timestamp": self.started_utc_timestamp,
              "uptime_in_secs": (long(time.time()) -
                                 long(self.started_utc_timestamp))}
@@ -155,6 +158,7 @@ class OpenBazaarContext(object):
                 'bm_pass': None,
                 'bm_port': -1,
                 'enable_ip_checker': False,
+                'tor_mode': False,
                 'config_file': None}
 
     @staticmethod
@@ -181,7 +185,8 @@ class OpenBazaarContext(object):
             disable_stun_check=defaults['disable_stun_check'],
             disable_open_browser=defaults['disable_open_browser'],
             disable_sqlite_crypt=defaults['disable_sqlite_crypt'],
-            enable_ip_checker=defaults['enable_ip_checker']
+            enable_ip_checker=defaults['enable_ip_checker'],
+            tor_mode=defaults['tor_mode']
         )
 
 

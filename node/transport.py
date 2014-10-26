@@ -38,6 +38,7 @@ class TransportLayer(object):
         self.nickname = nickname
         self.handler = None
         self.uri = network_util.get_peer_url(self.ip, self.port)
+        self.tor_mode = ob_ctx.tor_mode
         self.listener = None
 
         # Create one ZeroMQ context to be reused and reduce overhead
@@ -98,7 +99,7 @@ class CryptoTransportLayer(TransportLayer):
         self.ip = ob_ctx.server_ip
         self.nickname = ""
         self.dev_mode = ob_ctx.dev_mode
-
+        self.tor_mode = ob_ctx.tor_mode
         self.all_messages = (
             'hello',
             'findNode',
@@ -112,7 +113,7 @@ class CryptoTransportLayer(TransportLayer):
         TransportLayer.__init__(self, ob_ctx, self.guid, self.nickname)
         self.start_listener()
 
-        if ob_ctx.enable_ip_checker and not ob_ctx.seed_mode and not ob_ctx.dev_mode:
+        if ob_ctx.enable_ip_checker and not ob_ctx.seed_mode and not ob_ctx.dev_mode and not ob_ctx.tor_mode:
             self.start_ip_address_checker()
 
     def start_listener(self):
@@ -130,7 +131,7 @@ class CryptoTransportLayer(TransportLayer):
         self.listener = connection.CryptoPeerListener(
             self.ip, self.port, self.pubkey, self.secret, self.ctx,
             self.guid,
-            self._on_message
+            self._on_message,self.tor_mode
         )
 
         self.listener.set_ok_msg({
@@ -397,9 +398,9 @@ class CryptoTransportLayer(TransportLayer):
             '\nNickname:%s',
             guid, uri, pubkey, nickname
         )
-
+        tm = self.tor_mode
         return connection.CryptoPeerConnection(
-            self, uri, pubkey, guid=guid, nickname=nickname
+            self, uri, tm, pubkey, guid=guid, nickname=nickname
         )
 
     def respond_pubkey_if_mine(self, nickname, ident_pubkey):
