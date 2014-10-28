@@ -17,6 +17,7 @@ class TestPeerConnection(unittest.TestCase):
         cls.protocol = "tcp"
         cls.hostname = "crypto.io"
         cls.port = 54321
+        cls.tor_mode = False
         cls.address = cls._mk_address(cls.protocol, cls.hostname, cls.port)
         cls.nickname = "OpenBazaar LightYear"
         cls.pub = "YELLOW SUBMARINE"
@@ -26,10 +27,11 @@ class TestPeerConnection(unittest.TestCase):
         cls.default_nickname = ""
 
     def setUp(self):
-        self.pc1 = connection.PeerConnection(self.transport, self.address)
+        self.pc1 = connection.PeerConnection(self.transport, self.address, self.tor_mode)
         self.pc2 = connection.PeerConnection(
             self.transport,
             self.address,
+            self.tor_mode,
             self.nickname
         )
 
@@ -37,6 +39,7 @@ class TestPeerConnection(unittest.TestCase):
         self.assertEqual(self.pc1.timeout, self.timeout)
         self.assertEqual(self.pc1.transport, self.transport)
         self.assertEqual(self.pc1.address, self.address)
+        self.assertEqual(self.pc1.tor_mode, self.tor_mode)
         self.assertEqual(self.pc1.nickname, self.default_nickname)
         self.assertIsNotNone(self.pc1.ctx)
 
@@ -61,6 +64,7 @@ class TestCryptoPeerConnection(TestPeerConnection):
         return connection.CryptoPeerConnection(
             cls.transport,
             cls.address,
+            cls.tor_mode
         )
 
     @classmethod
@@ -68,6 +72,7 @@ class TestCryptoPeerConnection(TestPeerConnection):
         return connection.CryptoPeerConnection(
             cls.transport,
             cls.address,
+            cls.tor_mode,
             cls.pub,
             cls.guid,
             cls.nickname,
@@ -96,6 +101,7 @@ class TestCryptoPeerConnection(TestPeerConnection):
         self.assertEqual(self.pc1.ip, self.hostname)
         self.assertEqual(self.pc1.port, self.port)
         self.assertEqual(self.pc1.address, self.address)
+        self.assertEqual(self.pc1.tor_mode, self.tor_mode)
 
         self.assertEqual(self.pc1.pub, self.default_pub)
         self.assertEqual(self.pc1.sin, self.default_sin)
@@ -118,7 +124,8 @@ class TestCryptoPeerConnection(TestPeerConnection):
                 self.pc1,
                 connection.CryptoPeerConnection(
                     self.transport,
-                    address
+                    address,
+                    self.tor_mode
                 )
             )
 
@@ -133,6 +140,7 @@ class TestCryptoPeerConnection(TestPeerConnection):
             connection.CryptoPeerConnection(
                 self.transport,
                 self.address,
+                self.tor_mode,
                 self.pub,
                 another_guid,
                 self.nickname,

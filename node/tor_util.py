@@ -3,10 +3,9 @@ import sys
 from socket import socket, AF_INET, SOCK_STREAM
 from threading import Thread
 import time
-
+import constants
 
 LOGGING = 1
-
 
 def log(s):
     if LOGGING:
@@ -27,13 +26,11 @@ class TorRedirector(Thread):
         self.localport = self.sock.getsockname()[1]
         log('Bound to 127.0.0.1:%s -> %s:%s' % (self.localport, self.targethost, self.targetport))
         self.sock.listen(5)
-
     def run(self):
         ClientSock, address = self.sock.accept()
-        log('Client connected from %s, connecting to %s:%s' % (
-            address, self.targethost, self.targetport))
+        log('Client connected from %s, connecting to %s:%s' % (address, self.targethost, self.targetport))
         RemoteSock = socks.socksocket(AF_INET, SOCK_STREAM)
-        RemoteSock.setproxy(socks.PROXY_TYPE_SOCKS5, "127.0.0.1", 9050, True)
+        RemoteSock.setproxy(socks.PROXY_TYPE_SOCKS5, constants.SOCKS5_PROXY_HOST, constants.SOCKS5_PROXY_PORT, True)
         try:
             RemoteSock.connect((self.targethost, self.targetport))
         except socks.Socks5Error:

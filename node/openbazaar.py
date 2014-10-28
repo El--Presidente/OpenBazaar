@@ -69,7 +69,7 @@ def create_argument_parser():
         ('--disable-stun-check',),
         ('--disable-upnp', '-j'),
         ('--enable-ip-checker',),
-        ('--tor-mode',),
+        ('--tor-mode', '-t'),
         ('--seed-mode', '-S')
     )
     for switches in flags:

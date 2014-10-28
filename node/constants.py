@@ -52,5 +52,9 @@ checkRefreshInterval = refreshTimeout / 5
 # [bytes]
 udpDatagramMaxSize = 8192  # 8 KB
 
+# ##################### OTHER CONSTANTS
 DB_PATH = "db/ob.db"
 VERSION = "0.3.1.dev0"
+SOCKS5_PROXY_HOST = "127.0.0.1"
+SOCKS5_PROXY_PORT = 9050
+

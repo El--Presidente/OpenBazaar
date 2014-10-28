@@ -92,7 +92,7 @@ class CryptoPeerConnection(GUIDMixin, PeerConnection):
 
     def __init__(self, transport, address, tor_mode, pub=None, guid=None, nickname="",
                  sin=None):
-        self.tor_mode = tor_mode
+
         GUIDMixin.__init__(self, guid)
         PeerConnection.__init__(self, transport, address, tor_mode, nickname)
 
@@ -220,8 +220,11 @@ class CryptoPeerConnection(GUIDMixin, PeerConnection):
     def get_guid(self):
         return self.guid
 
+
 class PeerListener(GUIDMixin):
-    def __init__(self, ip, port, ctx, guid, data_cb, tor_mode):
+    def __init__(self, ip, port, tor_mode, ctx, guid, data_cb):
+        super(PeerListener, self).__init__(guid)
+
         self.ip = ip
         self.port = port
         self._data_cb = data_cb
@@ -254,14 +257,30 @@ class PeerListener(GUIDMixin):
         self.log.info("Listening at: %s:%s", self.ip, self.port)
         self.socket = self.ctx.socket(zmq.REP)
 
-        if network_util.is_loopback_addr(self.ip) or self.tor_mode:
+        if self.tor_mode:
+            try:
+                self.socket.bind('tcp://127.0.0.1:%s' % self.port)
+            except ZMQError as e:
+                error_message = "".join([
+                    "PeerListener.listen() error: ",
+                    "Could not bind socket to %s. " % self.uri,
+                    "Details:\n",
+                    "(%s)" % e])
+
+                if platform.system() == 'Darwin':
+                    error_message.join([
+                        "\n\nPerhaps you have not added a ",
+                        "loopback alias yet.\n",
+                        "Try this on your terminal and restart ",
+                        "OpenBazaar in development mode again:\n",
+                        "\n\t$ sudo ifconfig lo0 alias 127.0.0.2",
+                        "\n\n"])
+                raise Exception(error_message)
+        elif network_util.is_loopback_addr(self.ip):
             try:
                 # we are in local test mode or Tor mode so bind that socket on the
                 # local IP (or given URI in Dev mode)
-                if self.tor_mode:
-                    self.socket.bind('tcp://127.0.0.1:%s' % self.port)
-                else:
-                    self.socket.bind(self.uri)
+                self.socket.bind(self.uri)
             except ZMQError as e:
                 error_message = "".join([
                     "PeerListener.listen() error: ",
@@ -315,8 +334,9 @@ class PeerListener(GUIDMixin):
 
 class CryptoPeerListener(PeerListener):
 
-    def __init__(self, ip, port, pubkey, secret, ctx, data_cb,tor_mode):
-        PeerListener.__init__(self, ip, port, ctx, data_cb,tor_mode)
+    def __init__(self, ip, port, tor_mode, pubkey, secret, ctx, guid, data_cb):
+
+        super(CryptoPeerListener, self).__init__(ip, port, tor_mode, ctx, guid, data_cb)
 
         self.pubkey = pubkey
         self.secret = secret
