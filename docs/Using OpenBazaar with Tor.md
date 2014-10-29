@@ -12,33 +12,38 @@ Before you go any further please consider the following: OpenBazaar is pre-relea
 
 There are two methods for getting OpenBazaar working with Tor:
 
-1. Proxychains - Using a socket hooking application called proxychains to redirect all OpenBazaar traffic through a Tor SOCKS proxy
+1. Native support using 'Tor mode' - a fork of the development branch currently implements 'Tor mode' which routes all inter-node traffic via Tor and uses hidden services to expose OB edpoints
 2. Onioncat - Using an application called Onioncat to create an IPv6 TUN interface which is associated with a Tor Hidden Service and then running OpenBazaar
 
-####Proxychains pro's
-- Does not require root access to system
-- Simpler of the two methods
+####Native 'Tor mode' pro's
+- By far the simplest approach
+- Much faster
+- No external dependenices or root access required
+- Less chance of IP address leakage
 
-####Proxychains con's
+####Native 'Tor mode' con's
 - Requires the creation of a hidden service (for current releases of OB)
-- Does not work correctly yet - the advertised node URI needs to be the hidden services hostname
+- Is only available on a fork at present
+- Requires Tor-Mode seeds, cannot communicate with the existing OB public seeds
 
 ####Onioncat pro's
 - Completely isolated from non Onioncat (thus non-Tor) systems
-- Works now as incoming connections are supported
+- Works on both master annd develop branches (Tor mode support not necessary)
 
 ####Onioncat con's
 - Requires the creation of a hidden service (for current releases of OB)
 - Require creation of bi-directional Onioncat configuration which needs to be defended (firewalled etc)
+- Requires Onioncat enabled seeds, cannot communicate with the existing OB public seeds
 
+## 2. NATIVE 'TOR MODE'
 
-## 2. PROXYCHAINS
-
-1. Install the Proxychains package
+1. Create a hidden service for your OpenBazaar server listener
+  - Configure as follows: Listen on port 12345. Redirect to 127.0.0.1:12345. 
+  - Restart Tor and make a note of the hidden service hostname that is created for you.
 2. Start OpenBazaar with :
-` proxychains ./openbazaar -j start'
+` openbazaar start -t -s fksu5carj3okqfan.onion -i xxxyyyzzz.onion    (where xxxyyyzzz.onion is the hidden service hostname from step 1)
 
-## 3. ONIONCAT
+## 3. ONIONCAT (instructions for master up to 0.2.2)
 
 1. Create a hidden service for Onioncat
   - Configure as follows: Listen on port 8060. Redirect to 127.0.0.1:8060. 
