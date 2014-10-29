@@ -40,10 +40,10 @@ There are two methods for getting OpenBazaar working with Tor:
 1. Create a hidden service for your OpenBazaar server listener
   - Configure as follows: Listen on port 12345. Redirect to 127.0.0.1:12345. 
   - Restart Tor and make a note of the hidden service hostname that is created for you.
-2. Start OpenBazaar with :
-` openbazaar start -t -s fksu5carj3okqfan.onion -i xxxyyyzzz.onion    (where xxxyyyzzz.onion is the hidden service hostname from step 1)
+2. Start OpenBazaar with :<br/>
+` openbazaar -t -s fksu5carj3okqfan.onion -i xxxyyyzzz.onion start`    (where xxxyyyzzz.onion is the hidden service hostname from step 1)
 
-## 3. ONIONCAT (instructions for master up to 0.2.2)
+## 3. ONIONCAT
 
 1. Create a hidden service for Onioncat
   - Configure as follows: Listen on port 8060. Redirect to 127.0.0.1:8060. 
