@@ -27,48 +27,50 @@ class TorRedirector(Thread):
         log('Bound to 127.0.0.1:%s -> %s:%s' % (self.localport, self.targethost, self.targetport))
         self.sock.listen(5)
     def run(self):
-        ClientSock, address = self.sock.accept()
-        log('Client connected from %s, connecting to %s:%s' % (address, self.targethost, self.targetport))
-        RemoteSock = socks.socksocket(AF_INET, SOCK_STREAM)
-        RemoteSock.setproxy(socks.PROXY_TYPE_SOCKS5, constants.SOCKS5_PROXY_HOST, constants.SOCKS5_PROXY_PORT, True)
-        try:
-            RemoteSock.connect((self.targethost, self.targetport))
-        except socks.Socks5Error:
-            log('Error connecting to target host via Tor')
+        while 1:
+            ClientSock, address = self.sock.accept()
+            log('Client connected from %s, connecting to %s:%s' % (address, self.targethost, self.targetport))
+            RemoteSock = socks.socksocket(AF_INET, SOCK_STREAM)
+            RemoteSock.setproxy(socks.PROXY_TYPE_SOCKS5,
+                                constants.SOCKS5_PROXY_HOST, constants.SOCKS5_PROXY_PORT, True)
+            try:
+                RemoteSock.connect((self.targethost, self.targetport))
+            except socks.Socks5Error:
+                log('Error connecting to target host via Tor')
+                ClientSock.close()
+                RemoteSock.close()
+                self.sock.close()
+                return
+            ClientSock.settimeout(0.1)
+            RemoteSock.settimeout(0.1)
+            while 1:
+                try:
+                    dataout = ClientSock.recv(102400)
+                    if not dataout:
+                        log('Client disconnected')
+                        break
+                    RemoteSock.send(dataout)
+                except Exception, e:
+                    if e.args[0] == 'timed out':
+                        pass  # ignore timeouts
+                    else:
+                        log('Error ' + e.args[0])
+                        break
+                try:
+                    datain = RemoteSock.recv(102400)
+                    if not datain:
+                        log('Remote host disconnected')
+                        break
+                    ClientSock.send(datain)
+                except Exception, e:
+                    if e.args[0] == 'timed out':
+                        pass  # ignore timeouts
+                    else:
+                        log('Error ' + e.args[0])
+                        break
+
             ClientSock.close()
             RemoteSock.close()
-            self.sock.close()
-            return
-        ClientSock.settimeout(0.1)
-        RemoteSock.settimeout(0.1)
-        while 1:
-            try:
-                dataout = ClientSock.recv(1024000)
-                if not dataout:
-                    log('Client disconnected')
-                    break
-                RemoteSock.send(dataout)
-            except Exception, e:
-                if e.args[0] == 'timed out':
-                    pass  # ignore timeouts
-                else:
-                    log('Error ' + e.args[0])
-                    break
-            try:
-                datain = RemoteSock.recv(1024000)
-                if not datain:
-                    log('Remote host disconnected')
-                    break
-                ClientSock.send(datain)
-            except Exception, e:
-                if e.args[0] == 'timed out':
-                    pass  # ignore timeouts
-                else:
-                    log('Error ' + e.args[0])
-                    break
-
-        ClientSock.close()
-        RemoteSock.close()
         self.sock.close()
         log('Exiting')
 
